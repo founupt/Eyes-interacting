@@ -14,7 +14,6 @@ screen_w, screen_h = pyautogui.size()
 
 # Biến để lưu vị trí con trỏ
 last_x, last_y = screen_w // 2, screen_h // 2
-smooth_factor = 0.1  # Hệ số làm mượt
 
 blink_count_left = 0
 blink_count_right = 0
@@ -39,27 +38,29 @@ while True:
 
     if landmark_points:
         landmarks = landmark_points[0].landmark
-        num_landmarks = len(landmarks)
 
-        # Tính toán vị trí con trỏ chuột
+        # Lấy tọa độ con ngươi bằng cách sử dụng các điểm landmark cho mắt
+        left_eye = [landmarks[133], landmarks[144], landmarks[145], landmarks[153]]  # Landmark cho mắt trái
+        right_eye = [landmarks[362], landmarks[382], landmarks[373], landmarks[380]]  # Landmark cho mắt phải
+
+        # Tính toán trung bình tọa độ cho con ngươi trái
         if gaze.pupil_left_coords():
-            pupil_x = int(screen_w * (gaze.pupil_left_coords()[0] / frame_w))
-            pupil_y = int(screen_h * (gaze.pupil_left_coords()[1] / frame_h))
+            left_pupil_x = int(screen_w * (gaze.pupil_left_coords()[0] / frame_w))
+            left_pupil_y = int(screen_h * (gaze.pupil_left_coords()[1] / frame_h))
         else:
-            pupil_x, pupil_y = last_x, last_y  # Giữ nguyên nếu không phát hiện đồng tử
+            left_pupil_x = int(sum([landmark.x for landmark in left_eye]) / len(left_eye) * screen_w)
+            left_pupil_y = int(sum([landmark.y for landmark in left_eye]) / len(left_eye) * screen_h)
 
-        # Lọc chuyển động
-        last_x += (pupil_x - last_x) * smooth_factor
-        last_y += (pupil_y - last_y) * smooth_factor
+        # Tương tự cho con ngươi phải
+        if gaze.pupil_right_coords():
+            right_pupil_x = int(screen_w * (gaze.pupil_right_coords()[0] / frame_w))
+            right_pupil_y = int(screen_h * (gaze.pupil_right_coords()[1] / frame_h))
+        else:
+            right_pupil_x = int(sum([landmark.x for landmark in right_eye]) / len(right_eye) * screen_w)
+            right_pupil_y = int(sum([landmark.y for landmark in right_eye]) / len(right_eye) * screen_h)
 
-        # Di chuyển con trỏ chuột
-        pyautogui.moveTo(int(last_x), int(last_y))
-
-        # Vẽ các điểm đồng tử
-        for id, landmark in enumerate(landmarks[474:478]):
-            x = int(landmark.x * frame_w)
-            y = int(landmark.y * frame_h)
-            cv2.circle(frame, (x, y), 3, (0, 255, 0))
+        # Di chuyển con trỏ chuột đến trung bình tọa độ của mắt
+        pyautogui.moveTo((left_pupil_x + right_pupil_x) // 2, (left_pupil_y + right_pupil_y) // 2)
 
         # Kiểm tra nháy mắt trái
         left = [landmarks[145], landmarks[159]]
@@ -80,7 +81,7 @@ while True:
             start_time_blink_left = None
 
         # Kiểm tra nháy mắt phải
-        right = [landmarks[474], landmarks[478]] if num_landmarks > 478 else None
+        right = [landmarks[474], landmarks[478]] if len(landmarks) > 478 else None
         if right and (right[0].y - right[1].y) < 0.004:
             blink_count_right += 1
             if blink_count_right == 1 and not program_paused:
@@ -110,11 +111,6 @@ while True:
             if program_paused and not gaze.is_blinking():
                 print("Chương trình hiện đang khởi chạy")
                 program_paused = False
-
-        for landmark in left:
-            x_eye = int(landmark.x * frame_w)
-            y_eye = int(landmark.y * frame_h)
-            cv2.circle(annotated_frame, (x_eye, y_eye), 3, (0, 255, 255))
 
     else:
         print("Không phát hiện khuôn mặt.")
