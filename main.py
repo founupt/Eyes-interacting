@@ -8,12 +8,17 @@ from gaze_tracking import GazeTracking
 gaze = GazeTracking()
 webcam = cv2.VideoCapture(0)
 
-# Khởi tạo Mediapipe Face Mesh
 face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
-screen_w, screen_h = pyautogui.size()
+screen_w, screen_h = 1920, 1080
 
 # Biến để lưu vị trí con trỏ
 last_x, last_y = screen_w // 2, screen_h // 2
+
+# Hàm để làm mượt tọa độ
+def smooth_move(target_x, target_y, current_x, current_y, smoothing_factor=0.5):
+    new_x = current_x + (target_x - current_x) * smoothing_factor
+    new_y = current_y + (target_y - current_y) * smoothing_factor
+    return int(new_x), int(new_y)
 
 blink_count_left = 0
 blink_count_right = 0
@@ -39,35 +44,39 @@ while True:
     if landmark_points:
         landmarks = landmark_points[0].landmark
 
-        # Lấy tọa độ con ngươi bằng cách sử dụng các điểm landmark cho mắt
-        left_eye = [landmarks[133], landmarks[144], landmarks[145], landmarks[153]]  # Landmark cho mắt trái
-        right_eye = [landmarks[362], landmarks[382], landmarks[373], landmarks[380]]  # Landmark cho mắt phải
+        # Lấy tọa độ con ngươi bằng điểm landmark
+        left_eye = [landmarks[133], landmarks[144], landmarks[145], landmarks[153]]  
+        right_eye = [landmarks[362], landmarks[382], landmarks[373], landmarks[380]]
 
-        # Tính toán trung bình tọa độ cho con ngươi trái
-        if gaze.pupil_left_coords():
-            left_pupil_x = int(screen_w * (gaze.pupil_left_coords()[0] / frame_w))
-            left_pupil_y = int(screen_h * (gaze.pupil_left_coords()[1] / frame_h))
-        else:
-            left_pupil_x = int(sum([landmark.x for landmark in left_eye]) / len(left_eye) * screen_w)
-            left_pupil_y = int(sum([landmark.y for landmark in left_eye]) / len(left_eye) * screen_h)
+        # Tính toán trung bình tọa độ cho con ngươi
+        left_pupil_x = int(sum([landmark.x for landmark in left_eye]) / len(left_eye) * screen_w)
+        left_pupil_y = int(sum([landmark.y for landmark in left_eye]) / len(left_eye) * screen_h)
 
-        # Tương tự cho con ngươi phải
-        if gaze.pupil_right_coords():
-            right_pupil_x = int(screen_w * (gaze.pupil_right_coords()[0] / frame_w))
-            right_pupil_y = int(screen_h * (gaze.pupil_right_coords()[1] / frame_h))
-        else:
-            right_pupil_x = int(sum([landmark.x for landmark in right_eye]) / len(right_eye) * screen_w)
-            right_pupil_y = int(sum([landmark.y for landmark in right_eye]) / len(right_eye) * screen_h)
+        right_pupil_x = int(sum([landmark.x for landmark in right_eye]) / len(right_eye) * screen_w)
+        right_pupil_y = int(sum([landmark.y for landmark in right_eye]) / len(right_eye) * screen_h)
 
         # Di chuyển con trỏ chuột đến trung bình tọa độ của mắt
-        pyautogui.moveTo((left_pupil_x + right_pupil_x) // 2, (left_pupil_y + right_pupil_y) // 2)
+        target_x = (left_pupil_x + right_pupil_x) // 2
+        target_y = (left_pupil_y + right_pupil_y) // 2
+
+        # Tăng trọng số cho tọa độ y khi ở gần phần trên cùng
+        if target_y < screen_h * 0.1:  # Nếu gần phần trên cùng
+            target_y = max(0, target_y - 20)  # Giảm tọa độ y để dễ di chuyển lên
+
+        # Giới hạn tọa độ trong vùng màn hình
+        target_x = max(0, min(target_x, screen_w - 1))
+        target_y = max(0, min(target_y, screen_h - 1))
+
+        # Làm mượt chuyển động
+        last_x, last_y = smooth_move(target_x, target_y, last_x, last_y, smoothing_factor=0.5)
+        pyautogui.moveTo(last_x, last_y)
 
         # Kiểm tra nháy mắt trái
         left = [landmarks[145], landmarks[159]]
         if (left[0].y - left[1].y) < 0.004:
             blink_count_left += 1
             if blink_count_left == 1 and not program_paused:
-                pyautogui.click()  # Click chuột trái
+                pyautogui.click()  
                 print('Click chuột trái')
             if start_time_blink_left is None:
                 start_time_blink_left = time.time()
@@ -75,7 +84,7 @@ while True:
             if start_time_blink_left is not None:
                 if (time.time() - start_time_blink_left) < 1:  
                     if blink_count_left >= 2:
-                        pyautogui.click()  # Double click chuột trái
+                        pyautogui.click()  
                         print('Double click chuột trái')
                 blink_count_left = 0  
             start_time_blink_left = None
@@ -85,7 +94,7 @@ while True:
         if right and (right[0].y - right[1].y) < 0.004:
             blink_count_right += 1
             if blink_count_right == 1 and not program_paused:
-                pyautogui.click(button='right')  # Click chuột phải
+                pyautogui.click(button='right')  
                 print('Click chuột phải')
             if start_time_blink_right is None:
                 start_time_blink_right = time.time()
@@ -115,6 +124,7 @@ while True:
     else:
         print("Không phát hiện khuôn mặt.")
 
+    # Hiển thị trạng thái
     text = ""
     if gaze.is_blinking():
         text = "Blinking"
@@ -127,14 +137,11 @@ while True:
 
     cv2.putText(annotated_frame, text, (90, 60), cv2.FONT_HERSHEY_DUPLEX, 1.6, (147, 58, 31), 2)
 
-    left_pupil = gaze.pupil_left_coords()
-    right_pupil = gaze.pupil_right_coords()
-    cv2.putText(annotated_frame, "Left pupil:  " + str(left_pupil), (90, 130), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
-    cv2.putText(annotated_frame, "Right pupil: " + str(right_pupil), (90, 165), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
+    # Hiển thị tọa độ x của con ngươi
+    cv2.putText(annotated_frame, f"L: {left_pupil_x:.1f} R: {right_pupil_x:.1f}", (90, 130), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
 
     cv2.imshow("Eye Controlled Mouse", annotated_frame)
 
-    # Kiểm tra phím 'q' để dừng chương trình
     if cv2.waitKey(1) & 0xFF == ord('q'):
         print("Đang dừng chương trình...")
         break
