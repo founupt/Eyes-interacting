@@ -138,7 +138,7 @@ while True:
     cv2.putText(annotated_frame, text, (90, 60), cv2.FONT_HERSHEY_DUPLEX, 1.6, (147, 58, 31), 2)
 
     # Hiển thị tọa độ x của con ngươi
-    cv2.putText(annotated_frame, f"L: {left_pupil_x:.1f} R: {right_pupil_x:.1f}", (90, 130), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
+    # cv2.putText(annotated_frame, f"L: {left_pupil_x:.1f} R: {right_pupil_x:.1f}", (90, 130), cv2.FONT_HERSHEY_DUPLEX, 0.9, (147, 58, 31), 1)
 
     cv2.imshow("Eye Controlled Mouse", annotated_frame)
 
