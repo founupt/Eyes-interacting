@@ -45,11 +45,9 @@ with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
             last_x, last_y = smooth_move(target_x, target_y, last_x, last_y, smoothing_factor=0.5)
             pyautogui.moveTo(last_x, last_y)
 
-            # Kiểm tra nhắm mắt
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < 0.004
-            right_eye_closed = (landmarks[374].y - landmarks[386].y) < 0.004  # Kiểm tra mắt phải
+            right_eye_closed = (landmarks[374].y - landmarks[386].y) < 0.004  
 
-            # Nhắm mắt trái
             if left_eye_closed:
                 blink_count_left += 1
                 if blink_count_left == 1:
