@@ -4,17 +4,14 @@ import pyautogui
 import time
 from gaze_tracking import GazeTracking
 
-# Khởi tạo GazeTracking
 gaze = GazeTracking()
 webcam = cv2.VideoCapture(0)
 
 face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
 screen_w, screen_h = 1920, 1080
 
-# Biến để lưu vị trí con trỏ
 last_x, last_y = screen_w // 2, screen_h // 2
 
-# Hàm để làm mượt tọa độ
 def smooth_move(target_x, target_y, current_x, current_y, smoothing_factor=0.5):
     new_x = current_x + (target_x - current_x) * smoothing_factor
     new_y = current_y + (target_y - current_y) * smoothing_factor
@@ -25,7 +22,7 @@ blink_count_right = 0
 start_time_blink_left = None
 start_time_blink_right = None
 hold_start_time = None
-hold_duration = 5  # 5 giây
+hold_duration = 5  
 program_paused = False
 
 print("Nhấn 'q' để dừng chương trình.")

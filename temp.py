@@ -15,8 +15,8 @@ def smooth_move(target_x, target_y, current_x, current_y, smoothing_factor=0.5):
     return int(new_x), int(new_y)
 
 blink_count_left = 0
-start_time_blink_left = None
-double_blind_duration = 5
+blink_count_right = 0
+double_blind_duration = 4  
 double_blind_start_time = None
 
 print("Nhấn 'q' để dừng chương trình.")
@@ -31,13 +31,11 @@ with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
             
-            # Lấy tọa độ tròng đen
             left_pupil_x = int(landmarks[468].x * screen_w)  
             left_pupil_y = int(landmarks[468].y * screen_h)
             right_pupil_x = int(landmarks[473].x * screen_w)  
             right_pupil_y = int(landmarks[473].y * screen_h)
 
-            # Tính toán vị trí mục tiêu cho chuột
             target_x = (left_pupil_x + right_pupil_x) // 2
             target_y = (left_pupil_y + right_pupil_y) // 2
             
@@ -47,12 +45,16 @@ with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
             last_x, last_y = smooth_move(target_x, target_y, last_x, last_y, smoothing_factor=0.5)
             pyautogui.moveTo(last_x, last_y)
 
+            # Kiểm tra nhắm mắt
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < 0.004
+            right_eye_closed = (landmarks[374].y - landmarks[386].y) < 0.004  # Kiểm tra mắt phải
+
+            # Nhắm mắt trái
             if left_eye_closed:
                 blink_count_left += 1
                 if blink_count_left == 1:
                     start_time_blink_left = time.time()
-                if blink_count_left == 2 and (time.time() - start_time_blink_left < 1):
+                if blink_count_left >= 2 and (time.time() - start_time_blink_left < 0.8):
                     pyautogui.click()  
                     print('Double click chuột trái')
                     blink_count_left = 0  
@@ -62,28 +64,60 @@ with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
             else:
                 blink_count_left = 0  
 
-            if left_eye_closed:
+            if right_eye_closed:
+                blink_count_right += 1
+                if blink_count_right == 1:
+                    start_time_blink_right = time.time()
+                if blink_count_right >= 2 and (time.time() - start_time_blink_right < 0.4):
+                    pyautogui.click()  
+                    print('Double click chuột phải')
+                    blink_count_right = 0  
+                elif blink_count_right == 1:
+                    pyautogui.click() 
+                    print('Click chuột phải')
+            else:
+                blink_count_right = 0  
+
+            if left_eye_closed and right_eye_closed:
                 if double_blind_start_time is None:
                     double_blind_start_time = time.time()
                 elif time.time() - double_blind_start_time >= double_blind_duration:
                     print("Đang dừng chương trình do nhắm cả hai mắt.")
                     break  
             else:
-                double_blind_start_time = None  
+                # Reset time nếu mắt mở
+                if double_blind_start_time is not None:
+                    duration_closed = time.time() - double_blind_start_time
+                    if duration_closed < 0.5:  
+                        double_blind_start_time = None
+                else:
+                    double_blind_start_time = None  
 
-            # Xác định hướng nhìn
             gaze_text = ""
-            if (left_pupil_y < screen_h / 3) and (right_pupil_y < screen_h / 3):
-                gaze_text = "Moving Up"
-            elif (left_pupil_y > 2 * screen_h / 3) and (right_pupil_y > 2 * screen_h / 3):
-                gaze_text = "Moving Down"
-            elif (left_pupil_x < screen_w / 3) and (right_pupil_x < screen_w / 3):
-                gaze_text = "Moving Left"
-            elif (left_pupil_x > 2 * screen_w / 3) and (right_pupil_x > 2 * screen_w / 3):
-                gaze_text = "Moving Right"
+            center_width = 200
+            center_height = 200
+            center_x_start = (screen_w - center_width) / 2
+            center_x_end = center_x_start + center_width
+            center_y_start = (screen_h - center_height) / 2
+            center_y_end = center_y_start + center_height
+            
+            if left_pupil_y < screen_h / 2:
+                if left_pupil_x < screen_w / 3:
+                    gaze_text = "Moving Up Left"
+                elif left_pupil_x < 2 * screen_w / 3:
+                    gaze_text = "Moving Up Middle"
+                else:
+                    gaze_text = "Moving Up Right"
             else:
+                if left_pupil_x < screen_w / 3:
+                    gaze_text = "Moving Down Left"
+                elif left_pupil_x < 2 * screen_w / 3:
+                    gaze_text = "Moving Down Middle"
+                else:
+                    gaze_text = "Moving Down Right"
+            if (left_pupil_x >= center_x_start and left_pupil_x <= center_x_end) and \
+               (left_pupil_y >= center_y_start and left_pupil_y <= center_y_end):
                 gaze_text = "Center"
-
             cv2.putText(frame, gaze_text, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 1.5, (147, 58, 31), 2)
             cv2.imshow("Face Controlled Mouse", frame)
 
