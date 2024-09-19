@@ -9,7 +9,7 @@ webcam = cv2.VideoCapture(0)
 screen_w, screen_h = 1920, 1080
 last_x, last_y = screen_w // 2, screen_h // 2
 
-def smooth_move(target_x, target_y, current_x, current_y, smoothing_factor=0.5):
+def smooth_move(target_x, target_y, current_x, current_y, smoothing_factor=1):
     new_x = current_x + (target_x - current_x) * smoothing_factor
     new_y = current_y + (target_y - current_y) * smoothing_factor
     return int(new_x), int(new_y)
@@ -23,7 +23,11 @@ print("Nhấn 'q' để dừng chương trình.")
 
 with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
     while True:
-        _, frame = webcam.read()
+        ret, frame = webcam.read()
+        if not ret or frame is None:
+            print("Không thể lấy khung hình từ camera.")
+            continue 
+
         frame = cv2.flip(frame, 1)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         output = face_mesh.process(rgb_frame)
