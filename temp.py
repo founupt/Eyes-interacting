@@ -5,7 +5,6 @@ import time
 
 mp_face_mesh = mp.solutions.face_mesh
 webcam = cv2.VideoCapture(0)
-
 screen_w, screen_h = 1920, 1080
 last_x, last_y = screen_w // 2, screen_h // 2
 
@@ -87,7 +86,6 @@ with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
                     print("Đang dừng chương trình do nhắm cả hai mắt.")
                     break  
             else:
-                # Reset time nếu mắt mở
                 if double_blind_start_time is not None:
                     duration_closed = time.time() - double_blind_start_time
                     if duration_closed < 0.5:  

@@ -1,7 +1,11 @@
 import tkinter as tk
 from tkinter import font
 from PIL import Image, ImageTk  
+import subprocess
 
+def on_go_button_click():
+    user_name = name_entry.get()
+    subprocess.Popen(['python', 'home.py', user_name])
 root = tk.Tk()
 root.title("Eyes Tracking App")
 root.geometry("1000x500")
@@ -49,7 +53,12 @@ phone_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
 phone_entry = tk.Entry(form_frame, font=entry_font)
 phone_entry.grid(row=1, column=1, padx=10, pady=5)
 
-go_button = tk.Button(root, text="GO →", font=entry_font, bg="#3D5279", fg="white", width=10)
+# def on_go_button_click():
+#     user_name = name_entry.get()
+#     open_camera_interface(user_name)
+    
+go_button = tk.Button(root, text="GO →", font=entry_font, bg="#3D5279", fg="white", width=10, command=on_go_button_click)
 go_button.pack(pady=10)
 
 root.mainloop()
+
