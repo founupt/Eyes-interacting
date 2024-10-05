@@ -3,6 +3,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import cv2
 import sys
+import pyautogui
 from test import TrackingFace
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
@@ -15,7 +16,6 @@ root.configure(bg='#1E2440')
 tracking_active = False
 tracking_face = None
 
-# Mở rộng kích thước khung camera
 camera_frame = tk.Label(root)
 camera_frame.place(x=20, y=100, width=700, height=500)  
 
@@ -28,14 +28,26 @@ user_icon.pack(pady=10)
 user_name_label = tk.Label(side_frame, text=f"Hi, {user_name}", font=("Helvetica", 12), bg='#1E2440', fg='white')
 user_name_label.pack(pady=10)
 
+# Nút cuộn lên
 up_button = tk.Button(side_frame, text="⬆", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
 up_button.pack(pady=10)
 
+# Nút cuộn xuống
 down_button = tk.Button(side_frame, text="⬇", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
 down_button.pack(pady=10)
 
-keyboard_button = tk.Button(side_frame, text="⌨", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
-keyboard_button.pack(pady=10)
+# Tạo các hàm cuộn lên và cuộn xuống
+def scroll_up():
+    pyautogui.scroll(10)  # Cuộn lên
+    print("Cuộn lên")
+
+def scroll_down():
+    pyautogui.scroll(-10)  # Cuộn xuống
+    print("Cuộn xuống")
+
+# Gán các hàm cuộn vào nút
+up_button.config(command=scroll_up)
+down_button.config(command=scroll_down)
 
 cap = cv2.VideoCapture(0)
 
@@ -43,6 +55,7 @@ def update_camera():
     global tracking_face
     ret, frame = cap.read()
     if ret:
+        frame = cv2.resize(frame, (700, 500))
         if tracking_active:
             if tracking_face is None:
                 tracking_face = TrackingFace()
@@ -56,30 +69,8 @@ def update_camera():
 
     camera_frame.after(10, update_camera)
 
-def start_tracking():
-    global tracking_active
-    tracking_active = True
-    start_button.config(state=tk.DISABLED)  # Vô hiệu hóa nút "Start Tracking"
-    stop_button.config(state=tk.NORMAL)    # Kích hoạt nút "Stop Tracking"
-
-def stop_tracking():
-    global tracking_active, tracking_face
-    tracking_active = False
-    tracking_face = None
-    start_button.config(state=tk.NORMAL)   # Kích hoạt lại nút "Start Tracking"
-    stop_button.config(state=tk.DISABLED)  # Vô hiệu hóa nút "Stop Tracking"
-
-# Thêm nút Start và Stop Tracking
-start_button = tk.Button(side_frame, text="Start Tracking", font=("Helvetica", 16), bg='#1E2440', fg='white',
-                         command=start_tracking)
-start_button.pack(pady=10)
-
-stop_button = tk.Button(side_frame, text="Stop Tracking", font=("Helvetica", 16), bg='#1E2440', fg='white',
-                        command=stop_tracking)
-stop_button.pack(pady=10)
-
-# Gọi hàm start_tracking sau khi các nút đã được tạo
-start_tracking()
+# Automatically start tracking when the application starts
+tracking_active = True
 
 update_camera()
 
