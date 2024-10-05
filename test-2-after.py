@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import cv2
 import sys
 import pyautogui
+import keyboard  
 from test import TrackingFace
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
@@ -28,14 +29,6 @@ user_icon.pack(pady=10)
 user_name_label = tk.Label(side_frame, text=f"Hi, {user_name}", font=("Helvetica", 12), bg='#1E2440', fg='white')
 user_name_label.pack(pady=10)
 
-# Nút cuộn lên
-up_button = tk.Button(side_frame, text="⬆", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
-up_button.pack(pady=10)
-
-# Nút cuộn xuống
-down_button = tk.Button(side_frame, text="⬇", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
-down_button.pack(pady=10)
-
 # Tạo các hàm cuộn lên và cuộn xuống
 def scroll_up():
     pyautogui.scroll(10)  # Cuộn lên
@@ -45,9 +38,9 @@ def scroll_down():
     pyautogui.scroll(-10)  # Cuộn xuống
     print("Cuộn xuống")
 
-# Gán các hàm cuộn vào nút
-up_button.config(command=scroll_up)
-down_button.config(command=scroll_down)
+# Gán các phím mũi tên lên/xuống
+keyboard.add_hotkey('down', scroll_down)
+keyboard.add_hotkey('up', scroll_up)
 
 cap = cv2.VideoCapture(0)
 

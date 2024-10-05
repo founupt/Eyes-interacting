@@ -17,7 +17,6 @@ class TrackingFace:
         self.double_blind_start_time = None
         self.face_mesh = self.mp_face_mesh.FaceMesh(refine_landmarks=True)
 
-        # Khởi tạo biến thời gian nháy mắt
         self.start_time_blink_left = None
         self.start_time_blink_right = None
 
