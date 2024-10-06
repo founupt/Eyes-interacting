@@ -4,7 +4,6 @@ from PIL import Image, ImageTk
 import cv2
 import sys
 import pyautogui
-import keyboard  
 from test import TrackingFace
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
@@ -29,19 +28,6 @@ user_icon.pack(pady=10)
 user_name_label = tk.Label(side_frame, text=f"Hi, {user_name}", font=("Helvetica", 12), bg='#1E2440', fg='white')
 user_name_label.pack(pady=10)
 
-# Tạo các hàm cuộn lên và cuộn xuống
-def scroll_up():
-    pyautogui.scroll(10)  # Cuộn lên
-    print("Cuộn lên")
-
-def scroll_down():
-    pyautogui.scroll(-10)  # Cuộn xuống
-    print("Cuộn xuống")
-
-# Gán các phím mũi tên lên/xuống
-keyboard.add_hotkey('down', scroll_down)
-keyboard.add_hotkey('up', scroll_up)
-
 cap = cv2.VideoCapture(0)
 
 def update_camera():
@@ -62,7 +48,6 @@ def update_camera():
 
     camera_frame.after(10, update_camera)
 
-# Automatically start tracking when the application starts
 tracking_active = True
 
 update_camera()

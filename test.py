@@ -19,6 +19,8 @@ class TrackingFace:
 
         self.start_time_blink_left = None
         self.start_time_blink_right = None
+        
+        self.scroll_timer = 0
 
     def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=1):
         new_x = current_x + (target_x - current_x) * smoothing_factor
@@ -53,6 +55,19 @@ class TrackingFace:
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < 0.004
             right_eye_closed = (landmarks[374].y - landmarks[386].y) < 0.004
 
+            gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
+
+            if gaze_direction == "Moving Down Middle":
+                if self.is_still_moving(target_x, target_y):
+                    self.scroll_timer += 1 / 30  # Giả sử 30 FPS
+                    if self.scroll_timer >= 3:
+                        pyautogui.scroll(10)  # Cuộn xuống
+                        print("Cuộn xuống")
+                        self.scroll_timer = 0
+                else:
+                    self.scroll_timer = 0
+
+            # Logic nhấp chuột và nhắm mắt...
             if left_eye_closed:
                 self.blink_count_left += 1
                 if self.blink_count_left == 1:
@@ -95,31 +110,26 @@ class TrackingFace:
 
         return frame
 
-    def get_gaze_direction(self, x, y):
-        center_width = 200
-        center_height = 200
-        center_x_start = (self.screen_w - center_width) / 2
-        center_x_end = center_x_start + center_width
-        center_y_start = (self.screen_h - center_height) / 2
-        center_y_end = center_y_start + center_height
+    def is_still_moving(self, target_x, target_y):
+        return abs(self.last_x - target_x) < 10 and abs(self.last_y - target_y) < 10
 
+    def get_gaze_direction(self, x, y):
         if y < self.screen_h / 2:
             if x < self.screen_w / 3:
                 return "Moving Up Left"
-            elif x < 2 * self.screen_w / 3:
+            elif x < (self.screen_w / 3) * 2:
                 return "Moving Up Middle"
             else:
                 return "Moving Up Right"
         else:
             if x < self.screen_w / 3:
                 return "Moving Down Left"
-            elif x < 2 * self.screen_w / 3:
+            elif x < (self.screen_w / 3) * 2:
                 return "Moving Down Middle"
+            elif x == self.screen_w // 2 and y == self.screen_h // 2:
+                return "Center"  
             else:
                 return "Moving Down Right"
-
-        if (x >= center_x_start and x <= center_x_end) and (y >= center_y_start and y <= center_y_end):
-            return "Center"
 
     def __del__(self):
         self.face_mesh.close()
