@@ -59,15 +59,15 @@ class TrackingFace:
 
             if gaze_direction == "Moving Down Middle":
                 if self.is_still_moving(target_x, target_y):
-                    self.scroll_timer += 1 / 30  # Giả sử 30 FPS
+                    self.scroll_timer += 1 / 30  
                     if self.scroll_timer >= 3:
-                        pyautogui.scroll(10)  # Cuộn xuống
+                        pyautogui.scroll(10)  
                         print("Cuộn xuống")
                         self.scroll_timer = 0
                 else:
                     self.scroll_timer = 0
 
-            # Logic nhấp chuột và nhắm mắt...
+           
             if left_eye_closed:
                 self.blink_count_left += 1
                 if self.blink_count_left == 1:
