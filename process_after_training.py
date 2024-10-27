@@ -14,10 +14,8 @@ class TrackingFace:
 
         self.face_mesh = self.mp_face_mesh.FaceMesh(refine_landmarks=True)
 
-        # Load model for eye state classification
         self.model = joblib.load("eye_tracking_model.pkl")
 
-        # Reset blink counters and timer
         self.blink_count_left = 0
         self.blink_count_right = 0
         self.start_time_blink_left = None
@@ -42,19 +40,19 @@ class TrackingFace:
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
 
-            # Get the pupil positions
+        
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
             right_pupil_y = int(landmarks[473].y * self.screen_h)
 
-            # Predict eye states
+      
             input_data = [[left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y]]
             prediction = self.model.predict(input_data)
             left_eye_closed = bool(prediction[0][0])
             right_eye_closed = bool(prediction[0][1])
 
-            # Smoothly move cursor
+        
             target_x = (left_pupil_x + right_pupil_x) // 2
             target_y = (left_pupil_y + right_pupil_y) // 2
             target_x = max(0, min(target_x, self.screen_w - 1))
@@ -62,7 +60,7 @@ class TrackingFace:
             self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y)
             pyautogui.moveTo(self.last_x, self.last_y)
 
-            # Handle left eye blinks
+     
             if left_eye_closed:
                 if self.blink_count_left == 0:
                     self.start_time_blink_left = time.time()
@@ -78,7 +76,6 @@ class TrackingFace:
             else:
                 self.blink_count_left = 0
 
-            # Handle right eye blinks
             if right_eye_closed:
                 if self.blink_count_right == 0:
                     self.start_time_blink_right = time.time()
@@ -94,7 +91,6 @@ class TrackingFace:
             else:
                 self.blink_count_right = 0
 
-            # Handle scrolling with keyboard
             if left_eye_closed and right_eye_closed:
                 if self.double_blind_start_time is None:
                     self.double_blind_start_time = time.time()
@@ -129,7 +125,6 @@ def main():
 
         cv2.imshow("Eye Tracking", processed_frame)
 
-        # Press 'q' to exit the program
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Exiting program.")
             break

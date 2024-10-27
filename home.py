@@ -2,6 +2,9 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import cv2
 import sys
+import pyautogui
+import keyboard  
+# import test-2-after 
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
 

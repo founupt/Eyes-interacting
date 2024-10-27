@@ -5,7 +5,7 @@ import cv2
 import sys
 import pyautogui
 import keyboard  
-from process_after_training import TrackingFace
+from test import TrackingFace
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
 
@@ -28,10 +28,14 @@ user_icon.pack(pady=10)
 
 user_name_label = tk.Label(side_frame, text=f"Hi, {user_name}", font=("Helvetica", 12), bg='#1E2440', fg='white')
 user_name_label.pack(pady=10)
+up_button = tk.Button(side_frame, text="⬆", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
+up_button.pack(pady=10)
 
+down_button = tk.Button(side_frame, text="⬇", font=("Helvetica", 24), bg='#1E2440', fg='white', width=4)
+down_button.pack(pady=10)
 def scroll_up():
     pyautogui.scroll(10)  
-    print("Cuộn lên")
+    print("Cuộn lên") 
 
 def scroll_down():
     pyautogui.scroll(-10)  
@@ -39,7 +43,12 @@ def scroll_down():
 
 keyboard.add_hotkey('down', scroll_down)
 keyboard.add_hotkey('up', scroll_up)
-
+def stop_program(event=None):
+    print("Đang dừng chương trình...")
+    cap.release()  
+    cv2.destroyAllWindows() 
+    root.quit()  
+root.bind('<Escape>', stop_program)
 cap = cv2.VideoCapture(0)
 
 def update_camera():

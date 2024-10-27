@@ -3,9 +3,10 @@ from tkinter import font
 from PIL import Image, ImageTk  
 import subprocess
 
-def on_go_button_click():
+def on_go_button_click(event=None):
     user_name = name_entry.get()
-    subprocess.Popen(['python', 'home.py', user_name])
+    root.withdraw()
+    subprocess.Popen(['python', 'test-2-after.py', user_name])
 root = tk.Tk()
 root.title("Eyes Tracking App")
 root.geometry("1000x500")
@@ -59,6 +60,6 @@ phone_entry.grid(row=1, column=1, padx=10, pady=5)
     
 go_button = tk.Button(root, text="GO →", font=entry_font, bg="#3D5279", fg="white", width=10, command=on_go_button_click)
 go_button.pack(pady=10)
-
+root.bind('<Return>', on_go_button_click)
 root.mainloop()
 
