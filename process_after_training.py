@@ -12,19 +12,21 @@ class TrackingFace:
         self.last_x = self.screen_w // 2
         self.last_y = self.screen_h // 2
 
-        self.blink_count_left = 0
-        self.blink_count_right = 0
-        self.double_blind_duration = 4
-        self.double_blind_start_time = None
         self.face_mesh = self.mp_face_mesh.FaceMesh(refine_landmarks=True)
 
-        self.start_time_blink_left = None
-        self.start_time_blink_right = None
-        self.scroll_timer = 0
-
+        # Load model for eye state classification
         self.model = joblib.load("eye_tracking_model.pkl")
 
-    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=1):
+        # Reset blink counters and timer
+        self.blink_count_left = 0
+        self.blink_count_right = 0
+        self.start_time_blink_left = None
+        self.start_time_blink_right = None
+
+        self.double_blind_duration = 4
+        self.double_blind_start_time = None
+
+    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=0.5):
         new_x = current_x + (target_x - current_x) * smoothing_factor
         new_y = current_y + (target_y - current_y) * smoothing_factor
         return int(new_x), int(new_y)
@@ -40,104 +42,100 @@ class TrackingFace:
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
 
+            # Get the pupil positions
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
             right_pupil_y = int(landmarks[473].y * self.screen_h)
 
+            # Predict eye states
             input_data = [[left_pupil_x, left_pupil_y, right_pupil_x, right_pupil_y]]
             prediction = self.model.predict(input_data)
             left_eye_closed = bool(prediction[0][0])
             right_eye_closed = bool(prediction[0][1])
 
+            # Smoothly move cursor
             target_x = (left_pupil_x + right_pupil_x) // 2
             target_y = (left_pupil_y + right_pupil_y) // 2
             target_x = max(0, min(target_x, self.screen_w - 1))
             target_y = max(0, min(target_y, self.screen_h - 1))
-
-            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=0.5)
+            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y)
             pyautogui.moveTo(self.last_x, self.last_y)
 
-            gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
-
-            if gaze_direction == "Moving Down Middle":
-                if self.is_still_moving(target_x, target_y):
-                    self.scroll_timer += 1 / 30  
-                    if self.scroll_timer >= 3:
-                        pyautogui.scroll(10)  
-                        print("Cuộn xuống")
-                        self.scroll_timer = 0
-                else:
-                    self.scroll_timer = 0
-
-            
+            # Handle left eye blinks
             if left_eye_closed:
-                self.blink_count_left += 1
-                if self.blink_count_left == 1:
+                if self.blink_count_left == 0:
                     self.start_time_blink_left = time.time()
-                if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.8):
-                    # Chỉ nhấp chuột nếu đã nháy mắt liên tiếp
-                    if self.blink_count_left == 2:  # Đảm bảo chỉ nhấp một lần
-                        pyautogui.click()
-                        print('Double click chuột trái')
-                        self.blink_count_left = 0
-                elif self.blink_count_left == 1:
-                    # Nhấp chuột đơn nếu chỉ nháy một lần
-                    if time.time() - self.start_time_blink_left > 0.5:  # Thời gian tối thiểu giữa các nhấp
-                        pyautogui.click()
-                        print('Click chuột trái')
-                        self.blink_count_left = 0
+                self.blink_count_left += 1
+                if self.blink_count_left >= 2 and time.time() - self.start_time_blink_left < 0.8:
+                    pyautogui.click()
+                    print('Double click chuột trái')
+                    self.blink_count_left = 0
+                elif self.blink_count_left == 1 and time.time() - self.start_time_blink_left > 0.5:
+                    pyautogui.click()
+                    print('Click chuột trái')
+                    self.blink_count_left = 0
             else:
                 self.blink_count_left = 0
 
+            # Handle right eye blinks
             if right_eye_closed:
-                self.blink_count_right += 1
-                if self.blink_count_right == 1:
+                if self.blink_count_right == 0:
                     self.start_time_blink_right = time.time()
-                if self.blink_count_right >= 2 and self.start_time_blink_right is not None and (time.time() - self.start_time_blink_right < 0.4):
+                self.blink_count_right += 1
+                if self.blink_count_right >= 2 and time.time() - self.start_time_blink_right < 0.4:
                     pyautogui.click(button='right')
                     print('Double click chuột phải')
                     self.blink_count_right = 0
-                elif self.blink_count_right == 1:
+                elif self.blink_count_right == 1 and time.time() - self.start_time_blink_right > 0.5:
                     pyautogui.click(button='right')
                     print('Click chuột phải')
+                    self.blink_count_right = 0
             else:
                 self.blink_count_right = 0
 
+            # Handle scrolling with keyboard
             if left_eye_closed and right_eye_closed:
                 if self.double_blind_start_time is None:
                     self.double_blind_start_time = time.time()
                 elif time.time() - self.double_blind_start_time >= self.double_blind_duration:
                     print("Stopping program due to both eyes being closed.")
                     return None
+                else:
+                    pyautogui.press("down")
+                    print("Scroll down")
             else:
                 self.double_blind_start_time = None
-
-            gaze_text = self.get_gaze_direction(left_pupil_x, left_pupil_y)
-            cv2.putText(frame, gaze_text, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 1.5, (147, 58, 31), 2)
+                pyautogui.press("up")
+                print("Scroll up")
 
         return frame
 
-    def is_still_moving(self, target_x, target_y):
-        return abs(self.last_x - target_x) < 10 and abs(self.last_y - target_y) < 10
-
-    def get_gaze_direction(self, x, y):
-        if y < self.screen_h / 2:
-            if x < self.screen_w / 3:
-                return "Moving Up Left"
-            elif x < (self.screen_w / 3) * 2:
-                return "Moving Up Middle"
-            else:
-                return "Moving Up Right"
-        else:
-            if x < self.screen_w / 3:
-                return "Moving Down Left"
-            elif x < (self.screen_w / 3) * 2:
-                return "Moving Down Middle"
-            elif x == self.screen_w // 2 and y == self.screen_h // 2:
-                return "Center"  
-            else:
-                return "Moving Down Right"
-
     def __del__(self):
         self.face_mesh.close()
+
+def main():
+    cap = cv2.VideoCapture(0)
+    tracker = TrackingFace()
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        processed_frame = tracker.process_frame(frame)
+        if processed_frame is None:
+            break
+
+        cv2.imshow("Eye Tracking", processed_frame)
+
+        # Press 'q' to exit the program
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Exiting program.")
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
