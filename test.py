@@ -73,12 +73,14 @@ class TrackingFace:
                 if self.blink_count_left == 1:
                     self.start_time_blink_left = time.time()
                 if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.8):
+                    print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.click()
-                    print('Double click chuột trái')
+                    time.sleep(0.2)  # Thêm thời gian nghỉ
                     self.blink_count_left = 0
                 elif self.blink_count_left == 1:
+                    print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.click()
-                    print('Click chuột trái')
+                    time.sleep(0.2)  # Thêm thời gian nghỉ
             else:
                 self.blink_count_left = 0
 
@@ -87,12 +89,14 @@ class TrackingFace:
                 if self.blink_count_right == 1:
                     self.start_time_blink_right = time.time()
                 if self.blink_count_right >= 2 and self.start_time_blink_right is not None and (time.time() - self.start_time_blink_right < 0.4):
+                    print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
                     pyautogui.click(button='right')
-                    print('Double click chuột phải')
+                    time.sleep(0.2)  # Thêm thời gian nghỉ
                     self.blink_count_right = 0
                 elif self.blink_count_right == 1:
+                    print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
                     pyautogui.click(button='right')
-                    print('Click chuột phải')
+                    time.sleep(0.2)  # Thêm thời gian nghỉ
             else:
                 self.blink_count_right = 0
 
@@ -111,6 +115,7 @@ class TrackingFace:
         return frame
 
     def is_still_moving(self, target_x, target_y):
+        
         return abs(self.last_x - target_x) < 10 and abs(self.last_y - target_y) < 10
 
     def get_gaze_direction(self, x, y):

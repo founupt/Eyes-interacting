@@ -2,61 +2,47 @@ import cv2
 import mediapipe as mp
 
 mp_face_mesh = mp.solutions.face_mesh
-mp_drawing = mp.solutions.drawing_utils
+face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
 
-webcam = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)
 
-print("Nhấn 'q' để dừng chương trình.")
+# Các chỉ số landmark cho mắt trái và mắt phải
+LEFT_EYE_INDICES = [ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161 , 246 ]
+RIGHT_EYE_INDICES = [ 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398 ]
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    frame = cv2.flip(frame, 1)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-with mp_face_mesh.FaceMesh(refine_landmarks=True) as face_mesh:
-    while True:
-        ret, frame = webcam.read()
-        if not ret:
-            break
+    results = face_mesh.process(rgb_frame)
 
-        frame = cv2.flip(frame, 1)
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        output = face_mesh.process(rgb_frame)
+    if results.multi_face_landmarks:
+        for face_landmarks in results.multi_face_landmarks:
+            left_eye = []
+            for index in LEFT_EYE_INDICES:
+                lm = face_landmarks.landmark[index]
+                x, y = int(lm.x * frame.shape[1]), int(lm.y * frame.shape[0])
+                left_eye.append((x, y))
 
-        if output.multi_face_landmarks:
-            for face_landmarks in output.multi_face_landmarks:
-                left_pupil_x = int(face_landmarks.landmark[468].x * frame.shape[1])  
-                left_pupil_y = int(face_landmarks.landmark[468].y * frame.shape[0])
-                right_pupil_x = int(face_landmarks.landmark[473].x * frame.shape[1])  
-                right_pupil_y = int(face_landmarks.landmark[473].y * frame.shape[0])
+            right_eye = []
+            for index in RIGHT_EYE_INDICES:
+                lm = face_landmarks.landmark[index]
+                x, y = int(lm.x * frame.shape[1]), int(lm.y * frame.shape[0])
+                right_eye.append((x, y))
 
-                cv2.circle(frame, (left_pupil_x, left_pupil_y), 5, (0, 255, 0), -1)  # xanh lá - mắt trái
-                cv2.circle(frame, (right_pupil_x, right_pupil_y), 5, (255, 0, 0), -1)  # Màu xanh dương - mắt phải
+            for lm in left_eye:
+                cv2.circle(frame, lm, 2, (0, 255, 0), -1)
 
-                # Tính toán 4 điểm xung quanh con ngươi
-                offset = 8  # Khoảng cách từ con ngươi đến các điểm px
-                points_left = [
-                    (left_pupil_x - offset, left_pupil_y),        
-                    (left_pupil_x + offset, left_pupil_y),        
-                    (left_pupil_x, left_pupil_y - offset),         
-                    (left_pupil_x, left_pupil_y + offset)          
-                ]
-                
-                points_right = [
-                    (right_pupil_x - offset, right_pupil_y),       
-                    (right_pupil_x + offset, right_pupil_y),       
-                    (right_pupil_x, right_pupil_y - offset),      
-                    (right_pupil_x, right_pupil_y + offset)       
-                ]
+            for lm in right_eye:
+                cv2.circle(frame, lm, 2, (0, 255, 0), -1)
 
-                for point in points_left:
-                    cv2.circle(frame, point, 3, (0, 255, 0), -1)  # Màu xanh lá
+    cv2.imshow("Eye Landmarks", frame)
 
-                for point in points_right:
-                    cv2.circle(frame, point, 3, (255, 0, 0), -1)  # Màu xanh dương
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-                cv2.putText(frame, f'Left Pupil: ({left_pupil_x}, {left_pupil_y})', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
-                cv2.putText(frame, f'Right Pupil: ({right_pupil_x}, {right_pupil_y})', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 1)
-
-        cv2.imshow("Eye Tracking", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-webcam.release()
+# Giải phóng tài nguyên
+cap.release()
 cv2.destroyAllWindows()

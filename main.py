@@ -69,7 +69,7 @@ while True:
         pyautogui.moveTo(last_x, last_y)
 
         # Kiểm tra nháy mắt trái
-        left = [landmarks[145], landmarks[159]]
+        left = [landmarks[146], landmarks[159]]
         if (left[0].y - left[1].y) < 0.004:
             blink_count_left += 1
             if blink_count_left == 1 and not program_paused:
