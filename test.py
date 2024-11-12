@@ -10,17 +10,15 @@ class TrackingFace:
         self.screen_h = 1080
         self.last_x = self.screen_w // 2
         self.last_y = self.screen_h // 2
-
         self.blink_count_left = 0
         self.blink_count_right = 0
         self.double_blind_duration = 4
         self.double_blind_start_time = None
         self.face_mesh = self.mp_face_mesh.FaceMesh(refine_landmarks=True)
-
         self.start_time_blink_left = None
         self.start_time_blink_right = None
-        
         self.scroll_timer = 0
+        self.start_time_gaze = None
 
     def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=1):
         new_x = current_x + (target_x - current_x) * smoothing_factor
@@ -38,13 +36,25 @@ class TrackingFace:
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
 
+            # Các điểm mốc của con ngươi
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
             right_pupil_y = int(landmarks[473].y * self.screen_h)
 
-            target_x = (left_pupil_x + right_pupil_x) // 2
-            target_y = (left_pupil_y + right_pupil_y) // 2
+            # Các điểm mốc của mống mắt
+            left_iris = [landmarks[474], landmarks[475], landmarks[476], landmarks[477]]
+            right_iris = [landmarks[469], landmarks[470], landmarks[471], landmarks[472]]
+
+            # Tọa độ trung bình của mống mắt trái và phải
+            left_iris_x = int(sum([p.x for p in left_iris]) / len(left_iris) * self.screen_w)
+            left_iris_y = int(sum([p.y for p in left_iris]) / len(left_iris) * self.screen_h)
+            right_iris_x = int(sum([p.x for p in right_iris]) / len(right_iris) * self.screen_w)
+            right_iris_y = int(sum([p.y for p in right_iris]) / len(right_iris) * self.screen_h)
+
+            # Tọa độ mục tiêu là trung bình của hai mống mắt
+            target_x = (left_iris_x + right_iris_x) // 2
+            target_y = (left_iris_y + right_iris_y) // 2
 
             target_x = max(0, min(target_x, self.screen_w - 1))
             target_y = max(0, min(target_y, self.screen_h - 1))
@@ -58,16 +68,27 @@ class TrackingFace:
             gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
 
             if gaze_direction == "Moving Down Middle":
-                if self.is_still_moving(target_x, target_y):
-                    self.scroll_timer += 1 / 30  
-                    if self.scroll_timer >= 3:
-                        pyautogui.scroll(10)  
-                        print("Cuộn xuống")
-                        self.scroll_timer = 0
-                else:
-                    self.scroll_timer = 0
+                if abs(target_y - self.last_y) < 100:  
+                    if self.is_still_moving(target_x, target_y):
+                        if self.start_time_gaze is None:
+                            self.start_time_gaze = time.time()
+                        elif time.time() - self.start_time_gaze >= 5:
+                            self.scroll_down()  
+                            self.start_time_gaze = None
+                    else:
+                        self.start_time_gaze = None
 
-           
+            elif gaze_direction == "Moving Up Middle":
+                if abs(target_y - self.last_y) < 100:  
+                    if self.is_still_moving(target_x, target_y):
+                        if self.start_time_gaze is None:
+                            self.start_time_gaze = time.time()
+                        elif time.time() - self.start_time_gaze >= 5:
+                            self.scroll_up() 
+                            self.start_time_gaze = None
+                    else:
+                        self.start_time_gaze = None
+
             if left_eye_closed:
                 self.blink_count_left += 1
                 if self.blink_count_left == 1:
@@ -75,12 +96,12 @@ class TrackingFace:
                 if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.8):
                     print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.click()
-                    time.sleep(0.2)  # Thêm thời gian nghỉ
+                    time.sleep(0.2) 
                     self.blink_count_left = 0
                 elif self.blink_count_left == 1:
                     print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.click()
-                    time.sleep(0.2)  # Thêm thời gian nghỉ
+                    time.sleep(0.2)  
             else:
                 self.blink_count_left = 0
 
@@ -91,12 +112,12 @@ class TrackingFace:
                 if self.blink_count_right >= 2 and self.start_time_blink_right is not None and (time.time() - self.start_time_blink_right < 0.4):
                     print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
                     pyautogui.click(button='right')
-                    time.sleep(0.2)  # Thêm thời gian nghỉ
+                    time.sleep(0.2)  
                     self.blink_count_right = 0
                 elif self.blink_count_right == 1:
                     print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
                     pyautogui.click(button='right')
-                    time.sleep(0.2)  # Thêm thời gian nghỉ
+                    time.sleep(0.2)  
             else:
                 self.blink_count_right = 0
 
@@ -114,8 +135,19 @@ class TrackingFace:
 
         return frame
 
+    def scroll_down(self):
+        for _ in range(5):  
+            pyautogui.scroll(-100)  
+            time.sleep(0.03)  
+        print("Cuộn xuống")
+
+    def scroll_up(self):
+        for _ in range(3):  
+            pyautogui.scroll(50)  
+            time.sleep(0.03)  
+        print("Cuộn lên")
+
     def is_still_moving(self, target_x, target_y):
-        
         return abs(self.last_x - target_x) < 10 and abs(self.last_y - target_y) < 10
 
     def get_gaze_direction(self, x, y):

@@ -41,35 +41,28 @@ while True:
     if landmark_points:
         landmarks = landmark_points[0].landmark
 
-        # Lấy tọa độ con ngươi bằng điểm landmark
         left_eye = [landmarks[133], landmarks[144], landmarks[145], landmarks[153]]  
         right_eye = [landmarks[362], landmarks[382], landmarks[373], landmarks[380]]
 
-        # Tính toán trung bình tọa độ cho con ngươi
         left_pupil_x = int(sum([landmark.x for landmark in left_eye]) / len(left_eye) * screen_w)
         left_pupil_y = int(sum([landmark.y for landmark in left_eye]) / len(left_eye) * screen_h)
 
         right_pupil_x = int(sum([landmark.x for landmark in right_eye]) / len(right_eye) * screen_w)
         right_pupil_y = int(sum([landmark.y for landmark in right_eye]) / len(right_eye) * screen_h)
 
-        # Di chuyển con trỏ chuột đến trung bình tọa độ của mắt
         target_x = (left_pupil_x + right_pupil_x) // 2
         target_y = (left_pupil_y + right_pupil_y) // 2
 
-        # Tăng trọng số cho tọa độ y khi ở gần phần trên cùng
         if target_y < screen_h * 0.1:  # Nếu gần phần trên cùng
             target_y = max(0, target_y - 20)  # Giảm tọa độ y để dễ di chuyển lên
 
-        # Giới hạn tọa độ trong vùng màn hình
         target_x = max(0, min(target_x, screen_w - 1))
         target_y = max(0, min(target_y, screen_h - 1))
 
-        # Làm mượt chuyển động
         last_x, last_y = smooth_move(target_x, target_y, last_x, last_y, smoothing_factor=0.5)
         pyautogui.moveTo(last_x, last_y)
 
-        # Kiểm tra nháy mắt trái
-        left = [landmarks[146], landmarks[159]]
+        left = [landmarks[145], landmarks[159]]
         if (left[0].y - left[1].y) < 0.004:
             blink_count_left += 1
             if blink_count_left == 1 and not program_paused:
@@ -86,7 +79,6 @@ while True:
                 blink_count_left = 0  
             start_time_blink_left = None
 
-        # Kiểm tra nháy mắt phải
         right = [landmarks[474], landmarks[478]] if len(landmarks) > 478 else None
         if right and (right[0].y - right[1].y) < 0.004:
             blink_count_right += 1
