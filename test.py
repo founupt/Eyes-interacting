@@ -46,20 +46,18 @@ class TrackingFace:
             left_iris = [landmarks[474], landmarks[475], landmarks[476], landmarks[477]]
             right_iris = [landmarks[469], landmarks[470], landmarks[471], landmarks[472]]
 
-            # Tọa độ trung bình của mống mắt trái và phải
             left_iris_x = int(sum([p.x for p in left_iris]) / len(left_iris) * self.screen_w)
             left_iris_y = int(sum([p.y for p in left_iris]) / len(left_iris) * self.screen_h)
             right_iris_x = int(sum([p.x for p in right_iris]) / len(right_iris) * self.screen_w)
             right_iris_y = int(sum([p.y for p in right_iris]) / len(right_iris) * self.screen_h)
 
-            # Tọa độ mục tiêu là trung bình của hai mống mắt
             target_x = (left_iris_x + right_iris_x) // 2
             target_y = (left_iris_y + right_iris_y) // 2
 
             target_x = max(0, min(target_x, self.screen_w - 1))
             target_y = max(0, min(target_y, self.screen_h - 1))
 
-            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=0.5)
+            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=1)
             pyautogui.moveTo(self.last_x, self.last_y)
 
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < 0.004
@@ -89,39 +87,41 @@ class TrackingFace:
                     else:
                         self.start_time_gaze = None
 
-            if left_eye_closed:
+            if left_eye_closed and not right_eye_closed:
                 self.blink_count_left += 1
                 if self.blink_count_left == 1:
                     self.start_time_blink_left = time.time()
-                if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.8):
-                    print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
-                    pyautogui.click()
+                if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.4):
+                    print(f'Double-click chuột trái tại ({self.last_x}, {self.last_y})')
+                    pyautogui.doubleClick()
                     time.sleep(0.2) 
                     self.blink_count_left = 0
                 elif self.blink_count_left == 1:
                     print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.click()
-                    time.sleep(0.2)  
+                    time.sleep(0.2)
             else:
                 self.blink_count_left = 0
 
-            if right_eye_closed:
+            if right_eye_closed and not left_eye_closed:
                 self.blink_count_right += 1
                 if self.blink_count_right == 1:
                     self.start_time_blink_right = time.time()
                 if self.blink_count_right >= 2 and self.start_time_blink_right is not None and (time.time() - self.start_time_blink_right < 0.4):
-                    print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
-                    pyautogui.click(button='right')
-                    time.sleep(0.2)  
+                    print(f'Double-click chuột phải tại ({self.last_x}, {self.last_y})')
+                    pyautogui.doubleClick()
+                    time.sleep(0.2)
                     self.blink_count_right = 0
                 elif self.blink_count_right == 1:
                     print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
                     pyautogui.click(button='right')
-                    time.sleep(0.2)  
+                    time.sleep(0.2)
             else:
                 self.blink_count_right = 0
 
             if left_eye_closed and right_eye_closed:
+                self.blink_count_left = 0
+                self.blink_count_right = 0
                 if self.double_blind_start_time is None:
                     self.double_blind_start_time = time.time()
                 elif time.time() - self.double_blind_start_time >= self.double_blind_duration:
@@ -136,15 +136,15 @@ class TrackingFace:
         return frame
 
     def scroll_down(self):
-        for _ in range(5):  
-            pyautogui.scroll(-100)  
-            time.sleep(0.03)  
+        for _ in range(3):  
+            pyautogui.scroll(-200)  
+            time.sleep(0.02)  
         print("Cuộn xuống")
 
     def scroll_up(self):
         for _ in range(3):  
-            pyautogui.scroll(50)  
-            time.sleep(0.03)  
+            pyautogui.scroll(200)  
+            time.sleep(0.02)  
         print("Cuộn lên")
 
     def is_still_moving(self, target_x, target_y):
