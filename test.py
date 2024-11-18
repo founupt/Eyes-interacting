@@ -36,13 +36,11 @@ class TrackingFace:
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
 
-            # Các điểm mốc của con ngươi
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
             right_pupil_y = int(landmarks[473].y * self.screen_h)
 
-            # Các điểm mốc của mống mắt
             left_iris = [landmarks[474], landmarks[475], landmarks[476], landmarks[477]]
             right_iris = [landmarks[469], landmarks[470], landmarks[471], landmarks[472]]
 
@@ -136,13 +134,13 @@ class TrackingFace:
         return frame
 
     def scroll_down(self):
-        for _ in range(3):  
+        for i in range(3):  
             pyautogui.scroll(-200)  
             time.sleep(0.02)  
         print("Cuộn xuống")
 
     def scroll_up(self):
-        for _ in range(3):  
+        for i in range(3):  
             pyautogui.scroll(200)  
             time.sleep(0.02)  
         print("Cuộn lên")
