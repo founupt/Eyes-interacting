@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import cv2
 import sys
 import pyautogui
-from test import TrackingFace
+from scroll import TrackingFace
 
 user_name = sys.argv[1] if len(sys.argv) > 1 else "User"
 

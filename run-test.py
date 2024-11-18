@@ -20,7 +20,7 @@ class TrackingFace:
         self.scroll_timer = 0
         self.start_time_gaze = None
 
-    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=1):
+    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=0.5):
         new_x = current_x + (target_x - current_x) * smoothing_factor
         new_y = current_y + (target_y - current_y) * smoothing_factor
         return int(new_x), int(new_y)
@@ -68,7 +68,7 @@ class TrackingFace:
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:
                             self.start_time_gaze = time.time()
-                        elif time.time() - self.start_time_gaze >= 5:
+                        elif time.time() - self.start_time_gaze >= 2:
                             self.scroll_down()  
                             self.start_time_gaze = None
                     else:
@@ -79,7 +79,7 @@ class TrackingFace:
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:
                             self.start_time_gaze = time.time()
-                        elif time.time() - self.start_time_gaze >= 5:
+                        elif time.time() - self.start_time_gaze >= 2:
                             self.scroll_up() 
                             self.start_time_gaze = None
                     else:
@@ -129,19 +129,19 @@ class TrackingFace:
                 self.double_blind_start_time = None
 
             gaze_text = self.get_gaze_direction(left_pupil_x, left_pupil_y)
-            cv2.putText(frame, gaze_text, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 1.5, (147, 58, 31), 2)
+            cv2.putText(frame, gaze_text, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 0.7, (147, 58, 31), 1)
 
         return frame
 
     def scroll_down(self):
-        for i in range(3):  
-            pyautogui.scroll(-200)  
+        for i in range(5):  
+            pyautogui.scroll(-100)  
             time.sleep(0.02)  
         print("Cuộn xuống")
 
     def scroll_up(self):
-        for i in range(3):  
-            pyautogui.scroll(200)  
+        for i in range(5):  
+            pyautogui.scroll(100)  
             time.sleep(0.02)  
         print("Cuộn lên")
 
@@ -151,20 +151,20 @@ class TrackingFace:
     def get_gaze_direction(self, x, y):
         if y < self.screen_h / 2:
             if x < self.screen_w / 3:
-                return "Moving Up Left"
+                return f"Moving Up Left ({x}, {y})"
             elif x < (self.screen_w / 3) * 2:
-                return "Moving Up Middle"
+                return f"Moving Up Middle ({x}, {y})"
             else:
-                return "Moving Up Right"
+                return f"Moving Up Right ({x}, {y})"
         else:
             if x < self.screen_w / 3:
-                return "Moving Down Left"
+                return f"Moving Down Left ({x}, {y})"
             elif x < (self.screen_w / 3) * 2:
-                return "Moving Down Middle"
+                return f"Moving Down Middle ({x}, {y})"
             elif x == self.screen_w // 2 and y == self.screen_h // 2:
-                return "Center"  
+                return f"Center  ({x}, {y})"
             else:
-                return "Moving Down Right"
+                return f"Moving Down Right ({x}, {y})"
 
     def __del__(self):
         self.face_mesh.close()
