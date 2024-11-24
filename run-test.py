@@ -64,23 +64,23 @@ class TrackingFace:
             gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
 
             if gaze_direction == "Moving Down Middle":
-                if abs(target_y - self.last_y) < 100:  
+                if abs(target_y - self.last_y) < 100:
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:
                             self.start_time_gaze = time.time()
                         elif time.time() - self.start_time_gaze >= 2:
-                            self.scroll_down()  
+                            self.scroll_down()
                             self.start_time_gaze = None
                     else:
                         self.start_time_gaze = None
 
             elif gaze_direction == "Moving Up Middle":
-                if abs(target_y - self.last_y) < 100:  
+                if abs(target_y - self.last_y) < 100:
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:
                             self.start_time_gaze = time.time()
                         elif time.time() - self.start_time_gaze >= 2:
-                            self.scroll_up() 
+                            self.scroll_up()
                             self.start_time_gaze = None
                     else:
                         self.start_time_gaze = None
@@ -92,7 +92,7 @@ class TrackingFace:
                 if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.4):
                     print(f'Double-click chuột trái tại ({self.last_x}, {self.last_y})')
                     pyautogui.doubleClick()
-                    time.sleep(0.2) 
+                    time.sleep(0.2)
                     self.blink_count_left = 0
                 elif self.blink_count_left == 1:
                     print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
@@ -134,15 +134,15 @@ class TrackingFace:
         return frame
 
     def scroll_down(self):
-        for i in range(5):  
-            pyautogui.scroll(-100)  
-            time.sleep(0.02)  
+        for i in range(5):
+            pyautogui.scroll(-100)
+            time.sleep(0.02)
         print("Cuộn xuống")
 
     def scroll_up(self):
-        for i in range(5):  
-            pyautogui.scroll(100)  
-            time.sleep(0.02)  
+        for i in range(5):
+            pyautogui.scroll(100)
+            time.sleep(0.02)
         print("Cuộn lên")
 
     def is_still_moving(self, target_x, target_y):
@@ -168,3 +168,27 @@ class TrackingFace:
 
     def __del__(self):
         self.face_mesh.close()
+
+def main():
+    tracking_face = TrackingFace()
+    cap = cv2.VideoCapture(0)  # Change 0 to the appropriate camera index if needed
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        processed_frame = tracking_face.process_frame(frame)
+        if processed_frame is None:
+            break
+
+        cv2.imshow("Face Tracking", processed_frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()

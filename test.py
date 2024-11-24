@@ -20,7 +20,7 @@ class TrackingFace:
         self.scroll_timer = 0
         self.start_time_gaze = None
 
-    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor=1):
+    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor= 0.5):
         new_x = current_x + (target_x - current_x) * smoothing_factor
         new_y = current_y + (target_y - current_y) * smoothing_factor
         return int(new_x), int(new_y)
@@ -63,7 +63,7 @@ class TrackingFace:
 
             gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
 
-            if gaze_direction == "Moving Down Middle":
+            if gaze_direction == "Moving Down Left":
                 if abs(target_y - self.last_y) < 100:  
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:
@@ -74,7 +74,7 @@ class TrackingFace:
                     else:
                         self.start_time_gaze = None
 
-            elif gaze_direction == "Moving Up Middle":
+            elif gaze_direction == "Moving Up Left":
                 if abs(target_y - self.last_y) < 100:  
                     if self.is_still_moving(target_x, target_y):
                         if self.start_time_gaze is None:

@@ -58,7 +58,7 @@ phone_entry.grid(row=1, column=1, padx=10, pady=5)
 #     user_name = name_entry.get()
 #     open_camera_interface(user_name)
     
-go_button = tk.Button(root, text="GO →", font=entry_font, bg="#3D5279", fg="white", width=10, command=on_go_button_click)
+go_button = tk.Button(root, text="GO", font=entry_font, bg="#3D5279", fg="white", width=10, command=on_go_button_click)
 go_button.pack(pady=10)
 root.bind('<Return>', on_go_button_click)
 root.mainloop()
