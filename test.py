@@ -20,7 +20,7 @@ class TrackingFace:
         self.scroll_timer = 0
         self.start_time_gaze = None
 
-    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor= 0.5):
+    def smooth_move(self, target_x, target_y, current_x, current_y, smoothing_factor= 0.2):
         new_x = current_x + (target_x - current_x) * smoothing_factor
         new_y = current_y + (target_y - current_y) * smoothing_factor
         return int(new_x), int(new_y)
@@ -86,36 +86,46 @@ class TrackingFace:
                         self.start_time_gaze = None
 
             if left_eye_closed and not right_eye_closed:
-                self.blink_count_left += 1
-                if self.blink_count_left == 1:
-                    self.start_time_blink_left = time.time()
-                if self.blink_count_left >= 2 and self.start_time_blink_left is not None and (time.time() - self.start_time_blink_left < 0.4):
-                    print(f'Double-click chuột trái tại ({self.last_x}, {self.last_y})')
-                    pyautogui.doubleClick()
-                    time.sleep(0.2) 
-                    self.blink_count_left = 0
-                elif self.blink_count_left == 1:
-                    print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
-                    pyautogui.click()
-                    time.sleep(0.2)
+                if self.start_time_blink_left is None:
+                    self.start_time_blink_left = time.time()  
+                    self.blink_count_left = 1
+                else:
+                    elapsed_time = time.time() - self.start_time_blink_left
+                    if elapsed_time < 0.4: 
+                        self.blink_count_left += 1
+                        if self.blink_count_left == 2:
+                            print(f'Double-click chuột trái tại ({self.last_x}, {self.last_y})')
+                            pyautogui.doubleClick()  
+                            self.blink_count_left = 0
+                            self.start_time_blink_left = None
+                    else:  
+                        print(f'Click chuột trái tại ({self.last_x}, {self.last_y})')
+                        pyautogui.click()
+                        self.blink_count_left = 0
+                        self.start_time_blink_left = None
             else:
-                self.blink_count_left = 0
+                self.blink_count_left = 0  
 
             if right_eye_closed and not left_eye_closed:
-                self.blink_count_right += 1
-                if self.blink_count_right == 1:
-                    self.start_time_blink_right = time.time()
-                if self.blink_count_right >= 2 and self.start_time_blink_right is not None and (time.time() - self.start_time_blink_right < 0.4):
-                    print(f'Double-click chuột phải tại ({self.last_x}, {self.last_y})')
-                    pyautogui.doubleClick()
-                    time.sleep(0.2)
-                    self.blink_count_right = 0
-                elif self.blink_count_right == 1:
-                    print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
-                    pyautogui.click(button='right')
-                    time.sleep(0.2)
+                if self.start_time_blink_right is None:
+                    self.start_time_blink_right = time.time()  
+                    self.blink_count_right = 1
+                else:
+                    elapsed_time = time.time() - self.start_time_blink_right
+                    if elapsed_time < 0.4:  
+                        self.blink_count_right += 1
+                        if self.blink_count_right == 2:
+                            print(f'Double-click chuột phải tại ({self.last_x}, {self.last_y})')
+                            pyautogui.doubleClick(button='right')  
+                            self.blink_count_right = 0
+                            self.start_time_blink_right = None
+                    else:  
+                        print(f'Click chuột phải tại ({self.last_x}, {self.last_y})')
+                        pyautogui.click(button='right')
+                        self.blink_count_right = 0
+                        self.start_time_blink_right = None
             else:
-                self.blink_count_right = 0
+                self.blink_count_right = 0  
 
             if left_eye_closed and right_eye_closed:
                 self.blink_count_left = 0
@@ -124,9 +134,10 @@ class TrackingFace:
                     self.double_blind_start_time = time.time()
                 elif time.time() - self.double_blind_start_time >= self.double_blind_duration:
                     print("Stopping program due to both eyes being closed.")
-                    return None
+                    exit()
             else:
                 self.double_blind_start_time = None
+
 
             gaze_text = self.get_gaze_direction(left_pupil_x, left_pupil_y)
             cv2.putText(frame, gaze_text, (50, 50), cv2.FONT_HERSHEY_DUPLEX, 1.5, (147, 58, 31), 2)
