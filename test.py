@@ -58,8 +58,10 @@ class TrackingFace:
             self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=1)
             pyautogui.moveTo(self.last_x, self.last_y)
 
-            left_eye_closed = (landmarks[145].y - landmarks[159].y) < 0.004
-            right_eye_closed = (landmarks[374].y - landmarks[386].y) < 0.004
+            face_height = abs(landmarks[10].y - landmarks[152].y)
+
+            left_eye_closed = (landmarks[145].y - landmarks[159].y) < (0.02 * face_height)
+            right_eye_closed = (landmarks[374].y - landmarks[386].y) < (0.02 * face_height)
 
             gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
 
