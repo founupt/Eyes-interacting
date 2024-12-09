@@ -35,7 +35,6 @@ class TrackingFace:
 
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
-
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
@@ -63,7 +62,8 @@ class TrackingFace:
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < (0.02 * face_height)
             right_eye_closed = (landmarks[374].y - landmarks[386].y) < (0.02 * face_height)
 
-            gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
+            gaze_direction = self.get_gaze_direction
+            (left_pupil_x, left_pupil_y)
 
             if gaze_direction == "Moving Down Left":
                 if abs(target_y - self.last_y) < 100:  

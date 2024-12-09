@@ -42,6 +42,5 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Giải phóng tài nguyên
 cap.release()
 cv2.destroyAllWindows()
