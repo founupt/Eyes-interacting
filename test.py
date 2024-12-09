@@ -35,6 +35,7 @@ class TrackingFace:
 
         if output.multi_face_landmarks:
             landmarks = output.multi_face_landmarks[0].landmark
+
             left_pupil_x = int(landmarks[468].x * self.screen_w)
             left_pupil_y = int(landmarks[468].y * self.screen_h)
             right_pupil_x = int(landmarks[473].x * self.screen_w)
@@ -54,7 +55,7 @@ class TrackingFace:
             target_x = max(0, min(target_x, self.screen_w - 1))
             target_y = max(0, min(target_y, self.screen_h - 1))
 
-            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=1)
+            self.last_x, self.last_y = self.smooth_move(target_x, target_y, self.last_x, self.last_y, smoothing_factor=0.2)
             pyautogui.moveTo(self.last_x, self.last_y)
 
             face_height = abs(landmarks[10].y - landmarks[152].y)
@@ -62,8 +63,7 @@ class TrackingFace:
             left_eye_closed = (landmarks[145].y - landmarks[159].y) < (0.02 * face_height)
             right_eye_closed = (landmarks[374].y - landmarks[386].y) < (0.02 * face_height)
 
-            gaze_direction = self.get_gaze_direction
-            (left_pupil_x, left_pupil_y)
+            gaze_direction = self.get_gaze_direction(left_pupil_x, left_pupil_y)
 
             if gaze_direction == "Moving Down Left":
                 if abs(target_y - self.last_y) < 100:  
